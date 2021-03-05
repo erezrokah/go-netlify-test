@@ -1,0 +1,12 @@
+[build]
+  functions = "functions/"
+  command = "make build"
+  base = "."
+
+  publish = "dist"
+
+[dev]
+  autoLaunch = false
+  #framework= "#custom"
+  #command="make build-local"
+  #targetPort=8080
