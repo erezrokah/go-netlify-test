@@ -2,36 +2,79 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 )
 
+type IdentityResponse struct {
+	Identity *Identity `json:"identity"`
+	User     *User     `json:"user"`
+	SiteUrl  string    `json:"site_url"`
+	Alg      string    `json:"alg"`
+}
+
+type Identity struct {
+	URL   string `json:"url"`
+	Token string `json:"token"`
+}
+
+type User struct {
+	AppMetaData  *AppMetaData  `json:"app_metadata"`
+	Email        string        `json:"email"`
+	Exp          int           `json:"exp"`
+	Sub          string        `json:"sub"`
+	UserMetadata *UserMetadata `json:"user_metadata"`
+}
+type AppMetaData struct {
+	Provider string `json:"provider"`
+}
+type UserMetadata struct {
+	FullName string `json:"full_name"`
+}
+
+type Response struct {
+	Msg              string `json:"msg"`
+	IdentityResponse string `json:"identity_response"`
+}
+
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	fmt.Print("Got request for '/.netlify/functions/goodbye', this message is dumpled by 'cmd/goodbye/main.go'")
 	lc, ok := lambdacontext.FromContext(ctx)
 	if !ok {
 		return &events.APIGatewayProxyResponse{
-			StatusCode: 503,
-			Body:       "Something went wrong :(",
+			StatusCode: 500,
+			Body:       "server error",
 		}, nil
 	}
-
-	cc := lc.ClientContext
-	b, err := json.Marshal(ctx)
-	if err != nil {
+	log.Printf("lc.ClientContext.Custom: %+v\n", lc.ClientContext.Custom)
+	identityResponse := lc.ClientContext.Custom["netlify"]
+	raw, _ := base64.StdEncoding.DecodeString(identityResponse)
+	data := IdentityResponse{}
+	_ = json.Unmarshal(raw, &data)
+	if data.User == nil {
+		r := &Response{
+			Msg:              fmt.Sprintf("Your claim isn't valid. Try logging in and resubmitting your request"),
+			IdentityResponse: identityResponse,
+		}
+		resp, _ := json.Marshal(r)
 		return &events.APIGatewayProxyResponse{
-			StatusCode: 503,
-			Body:       "Something went wrong :(",
+			StatusCode: 403,
+			Body:       string(resp),
 		}, nil
 	}
-	fmt.Printf("cc: %#v\n", cc)
+	r := &Response{
+		Msg:              fmt.Sprintf("Hi %s your is claim is valid", data.User.UserMetadata.FullName),
+		IdentityResponse: identityResponse,
+	}
+	resp, _ := json.Marshal(r)
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Body:       string(b),
+		Body:       string(resp),
 	}, nil
 }
 
