@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
-	"microappsdev.com/go-test/internal/pkg/utils"
 )
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -21,10 +21,17 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	cc := lc.ClientContext
+	b, err := json.Marshal(cc)
+	if err != nil {
+		return &events.APIGatewayProxyResponse{
+			StatusCode: 503,
+			Body:       "Something went wrong :(",
+		}, nil
+	}
 	fmt.Printf("cc: %#v\n", cc)
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Body:       utils.IntroduceYourself(cc.Client.AppTitle),
+		Body:       string(b),
 	}, nil
 }
 
