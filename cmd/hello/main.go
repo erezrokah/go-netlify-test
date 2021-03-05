@@ -21,7 +21,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	cc := lc.ClientContext
-	b, err := json.Marshal(cc)
+	b, err := json.Marshal(ctx)
 	if err != nil {
 		return &events.APIGatewayProxyResponse{
 			StatusCode: 503,
