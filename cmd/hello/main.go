@@ -41,6 +41,7 @@ type UserMetadata struct {
 type Response struct {
 	Msg              string `json:"msg"`
 	IdentityResponse string `json:"identity_response"`
+	Id               string `json:"user_id"`
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -69,7 +70,8 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 	r := &Response{
 		Msg:              fmt.Sprintf("Hi %s your is claim is valid", data.User.UserMetadata.FullName),
-		IdentityResponse: identityResponse,
+		Id:               data.User.Sub,
+		IdentityResponse: data.User.Email,
 	}
 	resp, _ := json.Marshal(r)
 	return &events.APIGatewayProxyResponse{
