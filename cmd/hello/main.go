@@ -21,7 +21,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	cc := lc.ClientContext
-
+	fmt.Printf("%#v\n", cc)
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Body:       utils.IntroduceYourself(cc.Client.AppTitle),
